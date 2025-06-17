@@ -1,0 +1,64 @@
+<!-- sidebar.component.html -->
+<div class="sidebar-overlay" [class.active]="isOpen" (click)="closeSidebar()"></div>
+
+<nav class="sidebar" [class.active]="isOpen">
+  <div class="sidebar-header">
+    <button class="close-btn" (click)="closeSidebar()">
+      <i class="icon-close">bars-3</i>
+    </button>
+  </div>
+
+  <div class="sidebar-content">
+    <ul class="menu-list">
+      <li class="menu-item" [class.active]="activeItem === 'dashboard'">
+        <a href="#" (click)="setActiveItem('dashboard')" class="menu-link">
+          <i class="icon">📊</i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+
+      <li class="menu-item" [class.active]="activeItem === 'usuarios'">
+        <a href="#" (click)="setActiveItem('usuarios')" class="menu-link">
+          <i class="icon">👥</i>
+          <span>Usuários</span>
+        </a>
+      </li>
+
+      <li class="menu-item" [class.active]="activeItem === 'produtos'">
+        <a href="#" (click)="setActiveItem('produtos')" class="menu-link">
+          <i class="icon">📦</i>
+          <span>Produtos</span>
+        </a>
+      </li>
+
+      <li class="menu-item" [class.active]="activeItem === 'vendas'">
+        <a href="#" (click)="setActiveItem('vendas')" class="menu-link">
+          <i class="icon">💰</i>
+          <span>Vendas</span>
+        </a>
+      </li>
+
+      <li class="menu-item" [class.active]="activeItem === 'relatorios'">
+        <a href="#" (click)="setActiveItem('relatorios')" class="menu-link">
+          <i class="icon">📈</i>
+          <span>Relatórios</span>
+        </a>
+      </li>
+
+      <li class="menu-item" [class.active]="activeItem === 'configuracoes'">
+        <a href="#" (click)="setActiveItem('configuracoes')" class="menu-link">
+          <i class="icon">⚙️</i>
+          <span>Configurações</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="logout-btn" (click)="logout()">
+      <i class="icon">🚪</i>
+      <span>Sair</span>
+    </button>
+  </div>
+</nav>
+
