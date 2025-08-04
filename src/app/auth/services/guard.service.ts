@@ -10,5 +10,6 @@ export const authGuard: CanActivateFn = () => {
   if (authService.isLoggedIn$()()) {
     return true;
   }
+  console.warn('Acesso negado: usuário não está autenticado');
   return authService.logout();
 };

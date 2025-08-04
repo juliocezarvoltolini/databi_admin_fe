@@ -1,0 +1,248 @@
+.powerbi-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #000000;
+  overflow-x: hidden !important;
+}
+
+//=============================================================================
+// 🖼️ MOLDURA DO QUADRO (Container do PowerBI)
+//=============================================================================
+// Analogia: Como uma moldura que precisa esconder as bordas de uma foto grande
+
+.powerbi-container {
+  flex: 1; // 🧘 Zen: ocupa todo espaço disponível
+  position: relative;
+  overflow: hidden; // ✂️ Corta o que sai fora da moldura
+  background-color: #010d1a;
+  padding: 0;
+
+
+
+  .powerbi-frame {
+    width: 100%;
+    height: calc(
+      100% + 50px
+    ); 
+    border: none;
+    background-color: #010d1a;
+    display: block;
+  }
+
+  // 🎭 Máscara mágica - esconde o rodapé do PowerBI
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: linear-gradient(
+      to top,
+      #fff 0%,
+      rgba(255, 255, 255, 0.9) 60%,
+      transparent 100%
+    );
+    pointer-events: none; // 👻 Fantasma - não bloqueia cliques
+    z-index: 10;
+  }
+
+ 
+}
+
+//=============================================================================
+// 🎪 ESTADOS ESPECIAIS (Loading e Error)
+//=============================================================================
+// Analogia: Como placas de "Carregando..." e "Fora de Serviço"
+
+.loading-container,
+.error-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  background-color: #010d1a;
+
+  h5 {
+    color: #495057;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  .text-muted {
+    font-size: 0.9rem;
+  }
+
+  .spinner-border {
+    border-width: 0.25em;
+  }
+}
+
+
+
+//=============================================================================
+// 📱💻🖥️ ADAPTAÇÃO A DIFERENTES TELAS
+//=============================================================================
+// Analogia: Como roupas que se ajustam ao tamanho da pessoa
+
+// 📱 TELEFONE (Mobile)
+@media (max-width: 768px) {
+  .powerbi-header {
+    flex-direction: column; // 📚 Empilha como livros
+    gap: 1rem;
+    padding: 1rem;
+
+    .header-controls {
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap; // 🎁 Embrulha quando não cabe
+    }
+  }
+
+  .powerbi-container {
+    .powerbi-frame {
+      height: calc(100% + 40px); // 📏 Menor no celular
+    }
+
+    &::after {
+      height: 20px; // 🎭 Máscara menor
+    }
+  }
+
+}
+
+// 📟 TABLET (Tamanho médio)
+@media (min-width: 769px) and (max-width: 1024px) {
+  .powerbi-header {
+    padding: 1rem 1.5rem;
+  }
+}
+
+// 🖥️ COMPUTADOR (Desktop)
+@media (min-width: 1200px) {
+  .powerbi-header {
+    padding: 1.5rem 3rem;
+
+    .dashboard-title {
+      font-size: 1.75rem; // 📏 Título maior
+    }
+
+    .dashboard-subtitle {
+      font-size: 1rem;
+    }
+  }
+}
+
+// 🖥️🖥️ MONITOR GIGANTE (Ultra wide)
+@media (min-width: 1800px) {
+  .powerbi-header {
+    padding: 2rem 4rem;
+
+    .dashboard-title {
+      font-size: 2rem; // 📏 Título ainda maior
+    }
+  }
+
+  .powerbi-container {
+    .powerbi-frame {
+      height: calc(100% + 60px); // 📏 Margem maior para tela grande
+    }
+
+    &::after {
+      height: 30px; // 🎭 Máscara mais alta
+    }
+  }
+}
+
+//=============================================================================
+// 🌙 MODO ESCURO (Dark Mode)
+//=============================================================================
+// Analogia: Como trocar a lâmpada amarela por uma azul à noite
+
+@media (prefers-color-scheme: dark) {
+  .powerbi-page {
+    background-color: #1a1a1a;
+
+    .powerbi-header {
+      background-color: #2d2d2d;
+      border-bottom-color: #404040;
+
+      .dashboard-title {
+        color: #f0f0f0; // 🌙 Texto claro no escuro
+      }
+
+      .dashboard-subtitle {
+        color: #b0b0b0;
+      }
+    }
+
+    .powerbi-container,
+    .loading-container,
+    .error-container {
+      background-color: #2d2d2d;
+    }
+
+    // 🎭 Máscara escura para modo escuro
+    .powerbi-container::after {
+      background: linear-gradient(
+        to top,
+        #2d2d2d 0%,
+        rgba(45, 45, 45, 0.9) 60%,
+        transparent 100%
+      );
+    }
+
+    .loading-container h5 {
+      color: #f0f0f0;
+    }
+  }
+}
+
+//=============================================================================
+// 🎨 EFEITOS ESPECIAIS (Animações e Acessibilidade)
+//=============================================================================
+
+// 🌪️ Animação de rotação (para loading)
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+// 🎯 Destaque quando clica (acessibilidade)
+.btn:focus {
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+//=============================================================================
+// 🖨️ MODO IMPRESSÃO (Print)
+//=============================================================================
+// Analogia: Como tirar uma foto - remove tudo que não precisa aparecer
+
+@media print {
+  .powerbi-header,
+  .fullscreen-close {
+    display: none !important; // 🚫 Some completamente
+  }
+
+  .powerbi-container {
+    .powerbi-frame {
+      height: 100% !important; // 📏 Tamanho normal para impressão
+      margin-bottom: 0 !important;
+    }
+
+    &::after {
+      display: none !important; // 🎭 Remove máscara
+    }
+  }
+}

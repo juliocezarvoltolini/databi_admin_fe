@@ -1,0 +1,340 @@
+// Variáveis
+$sidebar-width: 280px;
+$sidebar-collapsed-width: 72px;
+$header-height: 64px;
+
+// Layout principal da aplicação
+.app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #f8fafc;
+}
+
+// Conteúdo principal
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: $sidebar-width; // Largura do menu expandido
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+
+  &.collapsed {
+    margin-left: $sidebar-collapsed-width; // Largura do menu colapsado
+  }
+
+  &.mobile {
+    margin-left: 0; // No mobile, o menu é overlay
+  }
+}
+
+// Header do conteúdo
+.content-header {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  position: sticky;
+  top: 0;
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    min-height: $header-height;
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      .mobile-menu-toggle {
+        color: #6b7280;
+        border: none;
+        background: transparent;
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          color: #374151;
+          background-color: #f3f4f6;
+        }
+
+        i {
+          font-size: 1.25rem;
+        }
+      }
+
+      .page-title {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      position: relative;
+
+      .btn-ghost {
+        color: #6b7280;
+        background: transparent;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          color: #374151;
+          background-color: #f3f4f6;
+        }
+
+        &:focus {
+          outline: 2px solid #3b82f6;
+          outline-offset: 2px;
+        }
+
+        i {
+          font-size: 1.25rem;
+        }
+      }
+
+      // Badge de notificações
+      .badge {
+        font-size: 0.625rem;
+        font-weight: 600;
+      }
+
+      // Dropdown customizado
+      .dropdown {
+        position: relative;
+
+        .dropdown-toggle {
+          &::after {
+            display: none; // Remove a seta padrão do Bootstrap
+          }
+        }
+
+        .dropdown-menu {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          z-index: 1000;
+          min-width: 12rem;
+          padding: 0.5rem 0;
+          margin: 0.5rem 0 0;
+          background-color: white;
+          border: 1px solid #e5e7eb;
+          border-radius: 0.5rem;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+          display: none;
+          
+          &.show {
+            display: block;
+            animation: dropdownFadeIn 0.15s ease-out;
+          }
+
+          .dropdown-item {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 0.5rem 1rem;
+            clear: both;
+            font-weight: 400;
+            color: #374151;
+            text-align: inherit;
+            text-decoration: none;
+            white-space: nowrap;
+            background-color: transparent;
+            border: 0;
+            transition: all 0.15s ease-in-out;
+
+            &:hover,
+            &:focus {
+              color: #1f2937;
+              background-color: #f3f4f6;
+            }
+
+            i {
+              font-size: 1rem;
+              color: #6b7280;
+            }
+
+            &:hover i {
+              color: #374151;
+            }
+          }
+
+          .dropdown-divider {
+            height: 0;
+            margin: 0.5rem 0;
+            overflow: hidden;
+            border-top: 1px solid #e5e7eb;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Backdrop para fechar dropdown
+.dropdown-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999;
+  background: transparent;
+}
+
+// Área do router-outlet
+.router-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.5px;
+  background-color: #ffffff;
+  // box-sizing: border-box;
+
+  // Customizar scrollbar
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+    
+    &:hover {
+      background: #94a3b8;
+    }
+  }
+}
+
+// Estados de loading (opcional)
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+
+  .loading-spinner {
+    color: #3b82f6;
+  }
+}
+
+// Animações para transições de página
+.router-content {
+  ::ng-deep router-outlet + * {
+    animation: fadeInUp 0.3s ease-out;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsividade
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    
+    &.collapsed {
+      margin-left: 0;
+    }
+  }
+
+  .content-header {
+    .header-content {
+      padding: 1rem;
+      
+      .header-left {
+        .page-title {
+          font-size: 1.25rem;
+        }
+      }
+    }
+  }
+
+  .router-content {
+    padding: 1rem;
+  }
+}
+
+// Ajustes para telas pequenas
+@media (max-width: 480px) {
+  .router-content {
+    padding: 0.75rem;
+  }
+
+  .content-header {
+    .header-content {
+      padding: 0.75rem;
+      
+      .header-left {
+        .page-title {
+          font-size: 1.125rem;
+        }
+      }
+      
+      .header-actions {
+        gap: 0.25rem;
+
+        .dropdown-menu {
+          min-width: 10rem;
+          right: -0.5rem; // Ajuste para telas pequenas
+        }
+      }
+    }
+  }
+}
+
+// Estados especiais
+.header-content {
+  // Estado quando o menu está colapsado
+  .main-content.collapsed ~ & {
+    .mobile-menu-toggle {
+      display: none;
+    }
+  }
+}

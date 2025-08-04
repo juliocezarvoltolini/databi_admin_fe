@@ -1,5 +1,26 @@
-<app-menu></app-menu>
+<!-- Layout Principal da Aplicação -->
+<div class="app-container">
+  <!-- Menu Lateral -->
+  <app-menu></app-menu>
 
-<div class="main-content">
-  <router-outlet></router-outlet>
+  <!-- Conteúdo Principal -->
+  <div class="main-content" 
+       [class.collapsed]="menuService.isCollapsed()" 
+       [class.mobile]="menuService.isMobile()">
+    
+    <!-- Header opcional -->
+   
+
+    <!-- Área de conteúdo das rotas -->
+    <main class="router-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+  <!-- Overlay para fechar dropdown -->
+  <div 
+    *ngIf="showUserMenu"
+    class="dropdown-backdrop"
+    (click)="closeUserMenu()"
+  ></div>
 </div>

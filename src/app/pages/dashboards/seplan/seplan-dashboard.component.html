@@ -1,0 +1,61 @@
+<!-- Container principal -->
+<div class="powerbi-page" >
+  
+  <!-- Loading state -->
+  <div *ngIf="isLoading()" class="loading-container">
+    <div class="d-flex flex-column align-items-center">
+      <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Carregando dashboard...</span>
+      </div>
+      <h5>Carregando Dashboard</h5>
+      <p class="text-muted">Conectando com PowerBI...</p>
+    </div>
+  </div>
+
+  <!-- Error state -->
+  <div *ngIf="hasError() && !isLoading()" class="error-container">
+    <div class="alert alert-danger d-flex align-items-center">
+      <i class="bi bi-exclamation-triangle-fill me-3"></i>
+      <div>
+        <h6 class="alert-heading mb-1">Erro ao carregar dashboard</h6>
+        <p class="mb-2">{{ errorMessage() }}</p>
+        <div class="d-flex gap-2">
+          <button 
+            type="button" 
+            class="btn btn-outline-danger btn-sm"
+            (click)="retry()"
+          >
+            <i class="bi bi-arrow-clockwise me-2"></i>
+            Tentar novamente
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-outline-secondary btn-sm"
+            (click)="openInPowerBI()"
+          >
+            <i class="bi bi-box-arrow-up-right me-2"></i>
+            Abrir no PowerBI
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PowerBI iframe -->
+  <div 
+    *ngIf="!isLoading() && !hasError()" 
+    class="powerbi-container"
+  >
+    <iframe
+      [src]="safeUrl"
+      class="powerbi-frame"
+      (load)="onIframeLoad()"
+      (error)="onIframeError()"
+      frameborder="0"
+      allowFullScreen="true"
+      title="Dashboard PowerBI - Painel de Monitoramento"
+    ></iframe>
+  </div>
+
+
+</div>

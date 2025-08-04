@@ -1,0 +1,767 @@
+<!-- Container principal -->
+<div class="cadastro-container">
+  
+  <!-- Alert de notificações -->
+  <div 
+    *ngIf="showAlert()" 
+    class="alert alert-dismissible fade show"
+    [class.alert-success]="alertType() === 'success'"
+    [class.alert-danger]="alertType() === 'error'"
+    [class.alert-info]="alertType() === 'info'"
+    role="alert"
+  >
+    <i 
+      class="bi me-2"
+      [class.bi-check-circle]="alertType() === 'success'"
+      [class.bi-exclamation-triangle]="alertType() === 'error'"
+      [class.bi-info-circle]="alertType() === 'info'"
+    ></i>
+    {{ alertMessage() }}
+    <button 
+      type="button" 
+      class="btn-close" 
+      (click)="hideAlert()"
+      aria-label="Close"
+    ></button>
+  </div>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1 class="page-title">
+        <i class="bi bi-person-plus me-2"></i>
+        {{ formTitle() }}
+      </h1>
+      <p class="page-description">
+        {{ isEditing() ? 'Edite as informações do usuário' : 'Preencha as informações para criar um novo usuário' }}
+      </p>
+    </div>
+    
+    <div class="header-actions">
+      <button 
+        type="button" 
+        class="btn btn-outline-secondary me-2"
+        (click)="cancel()"
+      >
+        <i class="bi bi-x-lg me-2"></i>
+        Cancelar
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-primary"
+        [disabled]="!isFormValid() || isLoading()"
+        (click)="onSubmit()"
+      >
+        <span *ngIf="isLoading()" class="spinner-border spinner-border-sm me-2"></span>
+        <i *ngIf="!isLoading()" class="bi bi-check-lg me-2"></i>
+        {{ isEditing() ? 'Atualizar' : 'Salvar' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Resumo de validações (quando há erros) -->
+  <div *ngIf="totalErrors() > 0" class="card border-warning mb-3">
+    <div class="card-header bg-warning bg-opacity-10">
+      <h6 class="card-title mb-0 text-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ totalErrors() }} erro(s) encontrado(s)
+      </h6>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6" *ngIf="usuarioTabErrors().length > 0">
+          <h6 class="text-danger">Usuário:</h6>
+          <ul class="list-unstyled mb-3">
+            <li *ngFor="let error of usuarioTabErrors()" class="text-danger small">
+              <i class="bi bi-x-circle me-1"></i>{{ error }}
+            </li>
+          </ul>
+        </div>
+        
+        <div class="col-md-6" *ngIf="pessoaTabErrors().length > 0">
+          <h6 class="text-danger">Dados Pessoais:</h6>
+          <ul class="list-unstyled mb-3">
+            <li *ngFor="let error of pessoaTabErrors()" class="text-danger small">
+              <i class="bi bi-x-circle me-1"></i>{{ error }}
+            </li>
+          </ul>
+        </div>
+        
+        <div class="col-md-6" *ngIf="enderecosTabErrors().length > 0">
+          <h6 class="text-danger">Endereços:</h6>
+          <ul class="list-unstyled mb-3">
+            <li *ngFor="let error of enderecosTabErrors()" class="text-danger small">
+              <i class="bi bi-x-circle me-1"></i>{{ error }}
+            </li>
+          </ul>
+        </div>
+        
+        <div class="col-md-6" *ngIf="contatosTabErrors().length > 0">
+          <h6 class="text-danger">Contatos:</h6>
+          <ul class="list-unstyled mb-3">
+            <li *ngFor="let error of contatosTabErrors()" class="text-danger small">
+              <i class="bi bi-x-circle me-1"></i>{{ error }}
+            </li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="alert alert-info small mb-0">
+        <i class="bi bi-info-circle me-2"></i>
+        Clique nas abas destacadas em vermelho para corrigir os erros.
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header p-0">
+      <ul class="nav nav-tabs card-header-tabs" role="tablist">
+        <li class="nav-item">
+          <button 
+            type="button"
+            class="nav-link"
+            [class.active]="activeTab() === 'usuario'"
+            (click)="setActiveTab('usuario')"
+          >
+            <i class="bi bi-person-circle me-2"></i>
+            Usuário
+          </button>
+        </li>
+        <li class="nav-item">
+          <button 
+            type="button"
+            class="nav-link"
+            [class.active]="activeTab() === 'pessoa'"
+            (click)="setActiveTab('pessoa')"
+          >
+            <i class="bi bi-person me-2"></i>
+            Dados Pessoais
+          </button>
+        </li>
+        <li class="nav-item">
+          <button 
+            type="button"
+            class="nav-link"
+            [class.active]="activeTab() === 'enderecos'"
+            (click)="setActiveTab('enderecos')"
+          >
+            <i class="bi bi-house me-2"></i>
+            Endereços
+            <span class="badge bg-secondary ms-2">{{ enderecosArray.length }}</span>
+          </button>
+        </li>
+        <li class="nav-item">
+          <button 
+            type="button"
+            class="nav-link"
+            [class.active]="activeTab() === 'contatos'"
+            (click)="setActiveTab('contatos')"
+          >
+            <i class="bi bi-telephone me-2"></i>
+            Contatos
+            <span class="badge bg-secondary ms-2">{{ contatosArray.length }}</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="usuarioForm" (ngSubmit)="onSubmit()">
+
+        <!-- Aba Usuário -->
+        <div *ngIf="activeTab() === 'usuario'" class="tab-content">
+          <div class="row g-3">
+            
+            <div class="col-md-6">
+              <label for="login" class="form-label">Login/E-mail *</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-at"></i>
+                </span>
+                <input 
+                  type="email" 
+                  class="form-control" 
+                  id="login"
+                  formControlName="login"
+                  [class.is-invalid]="isFieldInvalid('login')"
+                  placeholder="usuario@email.com"
+                >
+              </div>
+              <div *ngIf="isFieldInvalid('login')" class="invalid-feedback">
+                {{ getFieldError('login') }}
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="perfis" class="form-label">Perfis *</label>
+              <select 
+                class="form-select" 
+                id="perfis"
+                formControlName="perfis"
+                [class.is-invalid]="isFieldInvalid('perfis')"
+                multiple
+              >
+                <option 
+                  *ngFor="let perfil of perfisDisponiveis()" 
+                  [value]="perfil.id"
+                >
+                  {{ perfil.nome }}
+                </option>
+              </select>
+              <div *ngIf="isFieldInvalid('perfis')" class="invalid-feedback">
+                {{ getFieldError('perfis') }}
+              </div>
+              <div class="form-text">
+                Segure Ctrl (Cmd no Mac) para selecionar múltiplos perfis
+              </div>
+            </div>
+
+            <div class="col-md-6" *ngIf="!isEditing()">
+              <label for="senha" class="form-label">Senha *</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-lock"></i>
+                </span>
+                <input 
+                  type="password" 
+                  class="form-control" 
+                  id="senha"
+                  formControlName="senha"
+                  [class.is-invalid]="isFieldInvalid('senha')"
+                  placeholder="Mínimo 6 caracteres"
+                >
+              </div>
+              <div *ngIf="isFieldInvalid('senha')" class="invalid-feedback">
+                {{ getFieldError('senha') }}
+              </div>
+            </div>
+
+            <div class="col-md-6" *ngIf="!isEditing()">
+              <label for="confirmarSenha" class="form-label">Confirmar Senha *</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-lock-fill"></i>
+                </span>
+                <input 
+                  type="password" 
+                  class="form-control" 
+                  id="confirmarSenha"
+                  formControlName="confirmarSenha"
+                  [class.is-invalid]="isFieldInvalid('confirmarSenha')"
+                  placeholder="Repita a senha"
+                >
+              </div>
+              <div *ngIf="isFieldInvalid('confirmarSenha')" class="invalid-feedback">
+                {{ getFieldError('confirmarSenha') }}
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="form-check">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="usuarioAtivo"
+                  formControlName="ativo"
+                >
+                <label class="form-check-label" for="usuarioAtivo">
+                  Usuário ativo
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Aba Dados Pessoais -->
+        <div *ngIf="activeTab() === 'pessoa'" class="tab-content" formGroupName="pessoa">
+          <div class="row g-3">
+            
+            <div class="col-md-3">
+              <label for="tipoPessoa" class="form-label">Tipo *</label>
+              <select 
+                class="form-select" 
+                id="tipoPessoa"
+                formControlName="tipo"
+                [class.is-invalid]="isFieldInvalid('tipo', pessoaForm)"
+              >
+                <option 
+                  *ngFor="let tipo of tiposPessoa" 
+                  [value]="tipo.value"
+                >
+                  {{ tipo.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="col-md-9">
+              <label for="nome" class="form-label">
+                {{ tipoPessoa === 'PF' ? 'Nome Completo' : 'Razão Social' }} *
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-person"></i>
+                </span>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="nome"
+                  formControlName="nome"
+                  [class.is-invalid]="isFieldInvalid('nome', pessoaForm)"
+                  [placeholder]="tipoPessoa === 'PF' ? 'Nome completo da pessoa' : 'Razão social da empresa'"
+                >
+              </div>
+              <div *ngIf="isFieldInvalid('nome', pessoaForm)" class="invalid-feedback">
+                {{ getFieldError('nome', pessoaForm) }}
+              </div>
+            </div>
+
+            <div class="col-md-6" *ngIf="tipoPessoa === 'PF'">
+              <label for="documento" class="form-label">CPF</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-card-text"></i>
+                </span>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="documento"
+                  formControlName="documento"
+                  placeholder="000.000.000-00"
+                >
+              </div>
+            </div>
+
+            <div class="col-md-6" *ngIf="tipoPessoa === 'PF'">
+              <label for="dataNascimento" class="form-label">Data de Nascimento</label>
+              <input 
+                type="date" 
+                class="form-control" 
+                id="dataNascimento"
+                formControlName="dataNascimento"
+              >
+            </div>
+
+            <!-- Campos Pessoa Jurídica -->
+            <div class="col-md-6" *ngIf="tipoPessoa === 'PJ'">
+              <label for="cnpj" class="form-label">CNPJ</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-building"></i>
+                </span>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="cnpj"
+                  formControlName="cnpj"
+                  placeholder="00.000.000/0000-00"
+                >
+              </div>
+            </div>
+
+            <div class="col-md-6" *ngIf="tipoPessoa === 'PJ'">
+              <label for="nomeFantasia" class="form-label">Nome Fantasia</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="nomeFantasia"
+                formControlName="nomeFantasia"
+                placeholder="Nome fantasia da empresa"
+              >
+            </div>
+
+            <div class="col-md-4" *ngIf="tipoPessoa === 'PJ'">
+              <label for="inscricaoEstadual" class="form-label">Inscrição Estadual</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="inscricaoEstadual"
+                formControlName="inscricaoEstadual"
+              >
+            </div>
+
+            <div class="col-md-4" *ngIf="tipoPessoa === 'PJ'">
+              <label for="inscricaoMunicipal" class="form-label">Inscrição Municipal</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="inscricaoMunicipal"
+                formControlName="inscricaoMunicipal"
+              >
+            </div>
+
+            <div class="col-md-4" *ngIf="tipoPessoa === 'PJ'">
+              <label for="dataAbertura" class="form-label">Data de Abertura</label>
+              <input 
+                type="date" 
+                class="form-control" 
+                id="dataAbertura"
+                formControlName="dataAbertura"
+              >
+            </div>
+
+            <div class="col-md-6">
+              <label for="email" class="form-label">E-mail</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-envelope"></i>
+                </span>
+                <input 
+                  type="email" 
+                  class="form-control" 
+                  id="email"
+                  formControlName="email"
+                  placeholder="email@exemplo.com"
+                >
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="form-check">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="pessoaAtiva"
+                  formControlName="ativo"
+                >
+                <label class="form-check-label" for="pessoaAtiva">
+                  Pessoa ativa
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Aba Endereços -->
+        <div *ngIf="activeTab() === 'enderecos'" class="tab-content">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+              <i class="bi bi-house me-2"></i>
+              Endereços
+            </h5>
+            <button 
+              type="button" 
+              class="btn btn-outline-primary btn-sm"
+              (click)="addEndereco()"
+            >
+              <i class="bi bi-plus-lg me-2"></i>
+              Adicionar Endereço
+            </button>
+          </div>
+
+          <div formArrayName="enderecos">
+            <div 
+              *ngFor="let endereco of enderecosArray.controls; let i = index"
+              class="card mb-3"
+              [formGroupName]="i"
+            >
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-medium">Endereço {{ i + 1 }}</span>
+                <button 
+                  type="button" 
+                  class="btn btn-outline-danger btn-sm"
+                  (click)="removeEndereco(i)"
+                  [disabled]="enderecosArray.length === 1"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+              
+              <div class="card-body">
+                <div class="row g-3">
+                  
+                  <div class="col-md-4">
+                    <label class="form-label">Tipo</label>
+                    <select class="form-select" formControlName="tipo">
+                      <option *ngFor="let tipo of tiposEndereco" [value]="tipo.value">
+                        {{ tipo.label }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label">CEP</label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      formControlName="cep"
+                      placeholder="00000-000"
+                    >
+                  </div>
+
+                  <div class="col-md-4">
+                    <div class="form-check mt-4">
+                      <input 
+                        class="form-check-input" 
+                        type="checkbox" 
+                        formControlName="principal"
+                      >
+                      <label class="form-check-label">
+                        Endereço principal
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="col-md-8">
+                    <label class="form-label">Logradouro *</label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      formControlName="logradouro"
+                      placeholder="Rua, Avenida, etc."
+                    >
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label">Número</label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      formControlName="numero"
+                      placeholder="123"
+                    >
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Complemento</label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      formControlName="complemento"
+                      placeholder="Apto, Sala, etc."
+                    >
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Bairro *</label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      formControlName="bairro"
+                      placeholder="Nome do bairro"
+                    >
+                  </div>
+
+                  <div class="col-md-5">
+                    <label class="form-label">Cidade *</label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      formControlName="cidade"
+                      placeholder="Nome da cidade"
+                    >
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Estado *</label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      formControlName="estado"
+                      placeholder="UF"
+                      maxlength="2"
+                    >
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label">País</label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      formControlName="pais"
+                      placeholder="Brasil"
+                    >
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label">Observações</label>
+                    <textarea 
+                      class="form-control" 
+                      formControlName="observacoes"
+                      rows="2"
+                      placeholder="Observações sobre o endereço"
+                    ></textarea>
+                  </div>
+
+                  <div class="col-12">
+                    <div class="form-check">
+                      <input 
+                        class="form-check-input" 
+                        type="checkbox" 
+                        formControlName="ativo"
+                      >
+                      <label class="form-check-label">
+                        Endereço ativo
+                      </label>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="enderecosArray.length === 0" class="text-center py-4">
+            <i class="bi bi-house display-1 text-muted"></i>
+            <p class="text-muted">Nenhum endereço cadastrado</p>
+            <button 
+              type="button" 
+              class="btn btn-primary"
+              (click)="addEndereco()"
+            >
+              <i class="bi bi-plus-lg me-2"></i>
+              Adicionar Primeiro Endereço
+            </button>
+          </div>
+        </div>
+
+        <!-- Aba Contatos -->
+        <div *ngIf="activeTab() === 'contatos'" class="tab-content">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+              <i class="bi bi-telephone me-2"></i>
+              Contatos
+            </h5>
+            <button 
+              type="button" 
+              class="btn btn-outline-primary btn-sm"
+              (click)="addContato()"
+            >
+              <i class="bi bi-plus-lg me-2"></i>
+              Adicionar Contato
+            </button>
+          </div>
+
+          <div formArrayName="contatos">
+            <div 
+              *ngFor="let contato of contatosArray.controls; let i = index"
+              class="card mb-3"
+              [formGroupName]="i"
+            >
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-medium">Contato {{ i + 1 }}</span>
+                <button 
+                  type="button" 
+                  class="btn btn-outline-danger btn-sm"
+                  (click)="removeContato(i)"
+                  [disabled]="contatosArray.length === 1"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+              
+              <div class="card-body">
+                <div class="row g-3">
+                  
+                  <div class="col-md-4">
+                    <label class="form-label">Tipo *</label>
+                    <select class="form-select" formControlName="tipo">
+                      <option *ngFor="let tipo of tiposContato" [value]="tipo.value">
+                        {{ tipo.label }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-8">
+                    <label class="form-label">Valor *</label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      formControlName="valor"
+                      placeholder="Digite o contato"
+                    >
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Descrição</label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      formControlName="descricao"
+                      placeholder="Ex: Celular pessoal, E-mail corporativo"
+                    >
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="form-check mt-4">
+                      <input 
+                        class="form-check-input" 
+                        type="checkbox" 
+                        formControlName="principal"
+                      >
+                      <label class="form-check-label">
+                        Contato principal
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label">Observações</label>
+                    <textarea 
+                      class="form-control" 
+                      formControlName="observacoes"
+                      rows="2"
+                      placeholder="Observações sobre o contato"
+                    ></textarea>
+                  </div>
+
+                  <div class="col-12">
+                    <div class="form-check">
+                      <input 
+                        class="form-check-input" 
+                        type="checkbox" 
+                        formControlName="ativo"
+                      >
+                      <label class="form-check-label">
+                        Contato ativo
+                      </label>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="contatosArray.length === 0" class="text-center py-4">
+            <i class="bi bi-telephone display-1 text-muted"></i>
+            <p class="text-muted">Nenhum contato cadastrado</p>
+            <button 
+              type="button" 
+              class="btn btn-primary"
+              (click)="addContato()"
+            >
+              <i class="bi bi-plus-lg me-2"></i>
+              Adicionar Primeiro Contato
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Footer com ações -->
+    <div class="card-footer">
+      <div class="d-flex justify-content-end gap-2">
+        <button 
+          type="button" 
+          class="btn btn-outline-secondary"
+          (click)="cancel()"
+        >
+          <i class="bi bi-x-lg me-2"></i>
+          Cancelar
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-primary"
+          [disabled]="!isFormValid() || isLoading()"
+          (click)="onSubmit()"
+        >
+          <span *ngIf="isLoading()" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isLoading()" class="bi bi-check-lg me-2"></i>
+          {{ isEditing() ? 'Atualizar' : 'Salvar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

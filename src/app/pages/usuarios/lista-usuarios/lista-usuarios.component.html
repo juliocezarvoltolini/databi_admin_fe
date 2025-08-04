@@ -1,0 +1,418 @@
+<!-- Container principal -->
+<div class="lista-container">
+  
+  <!-- Alert de notificações -->
+  <div 
+    *ngIf="showAlert()" 
+    class="alert alert-dismissible fade show"
+    [class.alert-success]="alertType() === 'success'"
+    [class.alert-danger]="alertType() === 'error'"
+    [class.alert-info]="alertType() === 'info'"
+    role="alert"
+  >
+    <i 
+      class="bi me-2"
+      [class.bi-check-circle]="alertType() === 'success'"
+      [class.bi-exclamation-triangle]="alertType() === 'error'"
+      [class.bi-info-circle]="alertType() === 'info'"
+    ></i>
+    {{ alertMessage() }}
+    <button 
+      type="button" 
+      class="btn-close" 
+      (click)="hideAlert()"
+      aria-label="Close"
+    ></button>
+  </div>
+
+  <!-- Header da página -->
+  <div class="page-header">
+    <div class="header-content">
+      <p class="page-description mb-0">Gerencie os usuários e suas permissões</p>
+    </div>
+    
+    <div *ngIf="podeCadastrar()">
+      <button 
+        type="button" 
+        class="btn btn-primary"
+        (click)="novoUsuario()"
+      >
+        <i class="bi bi-person-plus me-2"></i>
+        Novo Usuário
+      </button>
+    </div>
+  </div>
+
+  <!-- Card de filtros -->
+  <div class="card filtros-card">
+    <div class="card-header">
+      <div class="d-flex justify-content-between align-items-center">
+        <button 
+          type="button"
+          class="btn btn-link p-0 text-decoration-none filtros-toggle"
+          (click)="toggleFiltros()"
+        >
+          <i class="bi bi-funnel me-2"></i>
+          Filtros
+          <i 
+            class="bi ms-2"
+            [class.bi-chevron-down]="!filtrosExpanded()"
+            [class.bi-chevron-up]="filtrosExpanded()"
+          ></i>
+        </button>
+        
+        <div class="resultados-info">
+          <span class="badge bg-primary">{{ totalRegistros() }}</span>
+          <span class="ms-2">usuário(s) encontrado(s)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body" [class.collapse]="!filtrosExpanded()" [class.show]="filtrosExpanded()">
+      <form [formGroup]="filtroForm" (ngSubmit)="aplicarFiltros()" class="filtros-form">
+        <div class="row g-3">
+          
+          <div class="col-md-4">
+            <label for="nome" class="form-label">Nome</label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-person"></i>
+              </span>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="nome"
+                formControlName="nome" 
+                placeholder="Filtrar por nome"
+              >
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label for="login" class="form-label">Login/E-mail</label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-at"></i>
+              </span>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="login"
+                formControlName="login" 
+                placeholder="Filtrar por login"
+              >
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label for="perfilId" class="form-label">Perfil</label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-shield-check"></i>
+              </span>
+              <select class="form-select" id="perfilId" formControlName="perfilId">
+                <option value="">Todos os perfis</option>
+                <option 
+                  *ngFor="let perfil of perfisDisponiveis(); trackBy: trackByPerfilId" 
+                  [value]="perfil.id"
+                >
+                  {{ perfil.nome }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+        
+        <div class="filtros-actions mt-3">
+          <button type="submit" class="btn btn-primary me-2">
+            <i class="bi bi-search me-2"></i>
+            Buscar
+          </button>
+          <button type="button" class="btn btn-outline-secondary" (click)="limparFiltros()">
+            <i class="bi bi-x-lg me-2"></i>
+            Limpar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Card da tabela -->
+  <div class="card table-card">
+    
+    <!-- Loading state -->
+    <div *ngIf="isLoading()" class="loading-container text-center py-5">
+      <div class="spinner-border text-primary mb-3" role="status">
+        <span class="visually-hidden">Carregando...</span>
+      </div>
+      <p class="text-muted">Carregando usuários...</p>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!isLoading() && !hasUsuarios()" class="empty-state text-center py-5">
+      <i class="bi bi-people empty-icon display-1 text-muted mb-3"></i>
+      <h3 class="text-secondary">Nenhum usuário encontrado</h3>
+      <p class="text-muted">Não há usuários que correspondam aos filtros aplicados.</p>
+      <button 
+        *ngIf="podeCadastrar()" 
+        type="button" 
+        class="btn btn-primary"
+        (click)="novoUsuario()"
+      >
+        <i class="bi bi-person-plus me-2"></i>
+        Cadastrar Primeiro Usuário
+      </button>
+    </div>
+
+    <!-- Tabela com dados -->
+    <div *ngIf="!isLoading() && hasUsuarios()" class="table-responsive">
+      <table class="table table-hover usuarios-table">
+        <thead class="table-light">
+          <tr>
+            <th></th>
+            <th>Nome</th>
+            <th>Login</th>
+            <th>Perfis</th>
+            <th>Permissões</th>
+            <th>Cadastrado em</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let usuario of usuarios(); trackBy: trackByUsuarioId" class="table-row">
+            
+            <!-- Avatar -->
+            <td>
+              <div class="user-avatar">
+                <span>{{ getUserInitials(usuario) }}</span>
+              </div>
+            </td>
+
+            <!-- Nome -->
+            <td>
+              <div class="user-info">
+                <div class="user-name">{{ getNomeCompleto(usuario) }}</div>
+                <small class="user-id text-muted">ID: {{ usuario.id }}</small>
+              </div>
+            </td>
+
+            <!-- Login -->
+            <td>
+              <code class="user-login">{{ usuario.login }}</code>
+            </td>
+
+            <!-- Perfis -->
+            <td>
+              <div class="d-flex flex-wrap gap-1">
+                <span 
+                  *ngFor="let perfil of usuario.perfis; trackBy: trackByPerfilId"
+                  class="badge bg-secondary"
+                >
+                  {{ perfil.nome }}
+                </span>
+              </div>
+            </td>
+
+            <!-- Permissões -->
+            <td>
+              <span class="position-relative">
+                <i class="bi bi-shield-check text-success"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                  {{ getPermissoesCount(usuario) }}
+                </span>
+              </span>
+            </td>
+
+            <!-- Data -->
+            <td>
+              <span class="date-text text-muted">{{ usuario.criadoEm | date:'dd/MM/yyyy HH:mm' }}</span>
+            </td>
+
+            <!-- Ações -->
+            <td>
+              <div class="actions-container text-center">
+                
+                <button 
+                  *ngIf="podeEditar()"
+                  type="button"
+                  class="btn btn-sm btn-outline-primary me-1"
+                  (click)="editarUsuario(usuario)"
+                  title="Editar usuário"
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+
+                <!-- Dropdown de mais ações -->
+                <div class="dropdown d-inline-block">
+                  <button 
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                    (click)="toggleDropdown(usuario.id)"
+                    [attr.aria-expanded]="activeDropdown() === usuario.id"
+                  >
+                    <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+
+                  <ul 
+                    class="dropdown-menu"
+                    [class.show]="activeDropdown() === usuario.id"
+                  >
+                    <li *ngIf="podeAlterarStatus()">
+                      <button 
+                        type="button" 
+                        class="dropdown-item"
+                        (click)="alterarStatus(usuario); closeDropdown()"
+                      >
+                        <i class="bi bi-toggle-on me-2"></i>
+                        Alterar Status
+                      </button>
+                    </li>
+                    
+                    <li *ngIf="podeExcluir() && usuario.id !== currentUser()?.id">
+                      <button 
+                        type="button" 
+                        class="dropdown-item text-danger"
+                        (click)="confirmarExclusao(usuario); closeDropdown()"
+                      >
+                        <i class="bi bi-trash me-2"></i>
+                        Excluir
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginação -->
+    <div *ngIf="!isLoading() && showPagination()" class="card-footer">
+      <div class="d-flex justify-content-between align-items-center">
+        
+        <!-- Info de registros -->
+        <div class="pagination-info">
+          <small class="text-muted">
+            Mostrando {{ startRecord() }} até {{ endRecord() }} de {{ totalRegistros() }} registros
+          </small>
+        </div>
+
+        <!-- Controles de paginação -->
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" [class.disabled]="pageIndex() === 0">
+              <button type="button" class="page-link" (click)="goToPage(0)">
+                <i class="bi bi-chevron-double-left"></i>
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="pageIndex() === 0">
+              <button type="button" class="page-link" (click)="goToPage(pageIndex() - 1)">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </li>
+            
+            <!-- Páginas -->
+            <li 
+              *ngFor="let page of [].constructor(totalPages()); let i = index"
+              class="page-item"
+              [class.active]="i === pageIndex()"
+            >
+              <button type="button" class="page-link" (click)="goToPage(i)">
+                {{ i + 1 }}
+              </button>
+            </li>
+
+            <li class="page-item" [class.disabled]="pageIndex() === totalPages() - 1">
+              <button type="button" class="page-link" (click)="goToPage(pageIndex() + 1)">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="pageIndex() === totalPages() - 1">
+              <button type="button" class="page-link" (click)="goToPage(totalPages() - 1)">
+                <i class="bi bi-chevron-double-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- Seletor de itens por página -->
+        <div class="page-size-selector">
+          <select 
+            class="form-select form-select-sm"
+            [value]="pageSize()"
+            (change)="changePageSize(+$any($event.target).value)"
+          >
+            <option value="5">5 por página</option>
+            <option value="10">10 por página</option>
+            <option value="25">25 por página</option>
+            <option value="50">50 por página</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmação de exclusão -->
+<div 
+  *ngIf="showDeleteModal()"
+  class="modal fade show d-block"
+  tabindex="-1"
+  style="background-color: rgba(0,0,0,0.5);"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+          Confirmar Exclusão
+        </h5>
+        <button 
+          type="button" 
+          class="btn-close" 
+          (click)="cancelarExclusao()"
+        ></button>
+      </div>
+      
+      <div class="modal-body">
+        <p>Tem certeza que deseja excluir o usuário:</p>
+        <div class="user-preview bg-light p-3 rounded text-center">
+          <strong class="d-block">{{ getNomeCompleto(usuarioParaExcluir()!) }}</strong>
+          <small class="text-muted">{{ usuarioParaExcluir()?.login }}</small>
+        </div>
+        <div class="alert alert-warning mt-3">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Esta ação não pode ser desfeita!</strong>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button 
+          type="button" 
+          class="btn btn-secondary" 
+          (click)="cancelarExclusao()"
+        >
+          Cancelar
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-danger" 
+          (click)="excluirUsuario()"
+        >
+          <i class="bi bi-trash me-2"></i>
+          Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Backdrop para fechar dropdown -->
+<div 
+  *ngIf="activeDropdown() !== null"
+  class="dropdown-backdrop"
+  (click)="closeDropdown()"
+></div>

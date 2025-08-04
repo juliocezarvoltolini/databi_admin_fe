@@ -1,64 +1,163 @@
-<!-- sidebar.component.html -->
-<div class="sidebar-overlay" [class.active]="isOpen" (click)="closeSidebar()"></div>
-
-<nav class="sidebar" [class.active]="isOpen">
+<!-- Menu Lateral com Bootstrap -->
+<nav [ngClass]="sidebarClasses()">
+  <!-- Header do Sidebar -->
   <div class="sidebar-header">
-    <button class="close-btn" (click)="closeSidebar()">
-      <i class="icon-close">bars-3</i>
+    <div class="logo">
+     @if (!isCollapsed()) {
+        <img src="assets/images/logo.svg" alt="DataBI Logo" class="logo-icon">
+        <span class="logo-text" @fadeInOut>Data BI</span>
+      } @else {
+        <!-- Logo menor quando colapsado -->
+        <img src="assets/images/logo.svg" alt="DataBI" class="logo-icon-collapsed">
+      }
+    </div>
+
+    <button
+      type="button"
+      class="btn btn-icon toggle-btn"
+      (click)="toggleSidebar()"
+      [title]="isCollapsed() ? 'Expandir menu' : 'Recolher menu'"
+    >
+      <i 
+        class="bi"
+        [class.bi-chevron-right]="isCollapsed()"
+        [class.bi-chevron-left]="!isCollapsed()"
+        [class.rotated]="!isCollapsed()"
+      ></i>
     </button>
   </div>
 
-  <div class="sidebar-content">
-    <ul class="menu-list">
-      <li class="menu-item" [class.active]="activeItem === 'dashboard'">
-        <a href="#" (click)="setActiveItem('dashboard')" class="menu-link">
-          <i class="icon">📊</i>
-          <span>Dashboard</span>
-        </a>
-      </li>
+  <hr class="sidebar-divider">
 
-      <li class="menu-item" [class.active]="activeItem === 'usuarios'">
-        <a href="#" (click)="setActiveItem('usuarios')" class="menu-link">
-          <i class="icon">👥</i>
-          <span>Usuários</span>
-        </a>
-      </li>
+  <!-- Informações do Usuário -->
+  @if (shouldShowUserInfo()) {
+    <div class="user-section" @fadeInOut>
+      <div class="user-avatar">
+        <span class="avatar-text">{{ getUserInitials() }}</span>
+      </div>
 
-      <li class="menu-item" [class.active]="activeItem === 'produtos'">
-        <a href="#" (click)="setActiveItem('produtos')" class="menu-link">
-          <i class="icon">📦</i>
-          <span>Produtos</span>
-        </a>
-      </li>
+      <div class="user-info">
+        <div class="user-name">{{ getUserDisplayName() }}</div>
+        <div class="user-role">{{ getPrimaryRole() }}</div>
+      </div>
 
-      <li class="menu-item" [class.active]="activeItem === 'vendas'">
-        <a href="#" (click)="setActiveItem('vendas')" class="menu-link">
-          <i class="icon">💰</i>
-          <span>Vendas</span>
-        </a>
-      </li>
+      <div class="user-status">
+        <div class="status-indicator online"></div>
+      </div>
+    </div>
 
-      <li class="menu-item" [class.active]="activeItem === 'relatorios'">
-        <a href="#" (click)="setActiveItem('relatorios')" class="menu-link">
-          <i class="icon">📈</i>
-          <span>Relatórios</span>
-        </a>
-      </li>
+    <hr class="sidebar-divider">
+  }
 
-      <li class="menu-item" [class.active]="activeItem === 'configuracoes'">
-        <a href="#" (click)="setActiveItem('configuracoes')" class="menu-link">
-          <i class="icon">⚙️</i>
-          <span>Configurações</span>
-        </a>
-      </li>
+  <!-- Menu Principal -->
+  <div class="menu-content">
+    <ul class="nav nav-pills flex-column menu-list">
+      @for (item of menuItems; track item.id) { 
+        @if (shouldShowMenuItem(item) || shouldShowSection(item)) {
+
+          <!-- Item sem filhos (link direto) -->
+          @if (!item.children && item.route) {
+            <li class="nav-item">
+              <a
+                class="nav-link menu-item-link"
+                [routerLink]="item.route"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: item.route === '/' }"
+                [title]="isCollapsed() ? item.label : ''"
+                (click)="navigateAndClose(item.route!)"
+              >
+                <i class="bi {{ item.icon }} menu-icon"></i>
+                
+                @if (!isCollapsed()) {
+                  <span class="menu-label" @fadeInOut>{{ item.label }}</span>
+                }
+                
+                @if (item.badge && !isCollapsed()) {
+                  <span class="badge bg-warning rounded-pill">{{ item.badge }}</span>
+                }
+              </a>
+            </li>
+          }
+
+          <!-- Item com filhos (expansível) -->
+          @if (item.children && shouldShowSection(item)) {
+            <li class="nav-item">
+              <div class="menu-section">
+                <!-- Header da seção -->
+                <button
+                  type="button"
+                  class="btn menu-section-btn"
+                  [class.collapsed]="!isSectionExpanded(item.id)"
+                  [disabled]="isCollapsed()"
+                  (click)="toggleSection(item.id)"
+                  [attr.aria-expanded]="isSectionExpanded(item.id)"
+                >
+                  <i class="bi {{ item.icon }} section-icon"></i>
+                  
+                  @if (!isCollapsed()) {
+                    <span @fadeInOut>{{ item.label }}</span>
+                    <i class="bi bi-chevron-down expand-icon ms-auto"></i>
+                  }
+                </button>
+
+                <!-- Submenu -->
+                <div 
+                  class="collapse submenu-collapse"
+                  [class.show]="isSectionExpanded(item.id)"
+                >
+                  <ul class="nav nav-pills flex-column submenu">
+                    @for (child of item.children; track child.id) { 
+                      @if (shouldShowMenuItem(child)) {
+                        <li class="nav-item">
+                          <a
+                            class="nav-link submenu-item"
+                            [routerLink]="child.route!"
+                            routerLinkActive="active"
+                            (click)="navigateAndClose(child.route!)"
+                          >
+                            <i class="bi {{ child.icon }} submenu-icon"></i>
+                            <span class="submenu-label">{{ child.label }}</span>
+
+                            @if (child.badge) {
+                              <span class="badge bg-warning rounded-pill">{{ child.badge }}</span>
+                            }
+                          </a>
+                        </li>
+                      } 
+                    }
+                  </ul>
+                </div>
+              </div>
+            </li>
+          } 
+        } 
+      }
     </ul>
   </div>
 
+  <!-- Spacer -->
+  <div class="flex-grow-1"></div>
+
+  <hr class="sidebar-divider">
+
+  <!-- Footer - Logout -->
   <div class="sidebar-footer">
-    <button class="logout-btn" (click)="logout()">
-      <i class="icon">🚪</i>
-      <span>Sair</span>
+    <button
+      type="button"
+      class="btn logout-btn w-100"
+      (click)="logout()"
+      [title]="isCollapsed() ? 'Sair' : ''"
+    >
+      <i class="bi bi-box-arrow-right logout-icon"></i>
+      
+      @if (!isCollapsed()) {
+        <span @fadeInOut>Sair</span>
+      }
     </button>
   </div>
 </nav>
 
+<!-- Overlay para mobile -->
+@if (!isCollapsed() && isMobile()) {
+  <div class="sidebar-overlay" (click)="toggleSidebar()" @slideInOut></div>
+}
